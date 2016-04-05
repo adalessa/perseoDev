@@ -148,4 +148,62 @@ class OperationTest extends TestCase
         $this->assertArraySubset(["operation" => "operation3"], $operation1->output());
     }
 
+    /** @test */
+    public function operation_can_run_in_one_line()
+    {
+        $this->assertEquals(
+            ['name' => 'testOne'],
+            Operation::make(TestOperationOne::class)->run()->output()
+        );
+
+        $operation1 = Operation::make(TestOperationOne::class);
+        $operation2 = Operation::make(TestOperationTwo::class);
+
+        $this->assertEquals(
+            ["name" => "testOne", "lastname" => "testTwo"],
+            $operation1->then($operation2)->run()->output()
+        );
+    }
+
+    /** @test */
+    public function run_a_callback_after_a_then()
+    {
+        $operation1 = Operation::make(TestOperationOne::class);
+        $operation2 = Operation::make(TestOperationTwo::class);
+
+        $callback = function ($data) {$data['use_callback'] = true; return $data;};
+        $operation2->callback($callback);
+        $operation1->then($operation2)->run();
+        
+        $this->assertEquals(
+            ["name" => "testOne", "lastname" => "testTwo","use_callback" => true],
+            $operation1->output()
+        );
+    }
+
+    /** @test */
+    public function each_operation_has_it_owns_data()
+    {
+        $operation1 = Operation::make(TestOperationOne::class);
+        $operation2 = Operation::make(TestOperationTwo::class);
+        $operation3 = Operation::make(TestOperationThird::class);
+        $operation1->then(
+            $operation2->then($operation3)
+        )->run();
+        
+        $this->assertEquals(
+            ["name" => "testOne"],
+            $operation1->processOutput()
+        );
+        
+        $this->assertEquals(
+            ["name" => "testOne", "lastname" => "testTwo"],
+            $operation2->processOutput()
+        );
+
+        $this->assertEquals(
+            ["name" => "testOne", "lastname" => "testTwo","operation" => "operation3"],
+            $operation3->output()
+        );
+    }
 }

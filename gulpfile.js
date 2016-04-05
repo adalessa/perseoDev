@@ -12,5 +12,8 @@ var elixir = require('laravel-elixir');
  */
 
 elixir(function(mix) {
-    mix.sass('app.scss');
+    mix.phpUnit([
+    	'package/olm/perseo/**/*.php',
+    	'tests/**/*.php'
+    	]);
 });

@@ -1,6 +1,7 @@
 <?php 
 namespace Olm\Perseo\Implementation;
 
+use Olm\Perseo\TimeLength;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Olm\Perseo\Jobs\ProcessScheduledOperation;
 use Olm\Perseo\Exceptions\OperationWorkflowPathInvalid;
@@ -13,45 +14,81 @@ abstract class Operation implements OperationContract
     protected $id;
     protected $input;
     protected $output;
+    protected $processOutput;
     protected $result;
     protected $queue;
     protected $nextOperation = null;
     protected $workflow = null;
     protected $callbackFunction = null;
 
+    /**
+     *
+     * This is the funciton that will manage the excecution of the operation
+     *
+     */
     public function run()
     {
-        //this function will execute the process method in the operations
         $result = $this->process();
-        
-        if ($result instanceof OperationContract) {
-            return;
+
+        if ($this->hasBeenSchedule($result)) {
+            return $this;
         }
 
         $this->setResult($result);
         $this->runCallback();
+
+        $this->setProcessOutput();
+
+        $this->processNext();
+        return $this;
+    }
+
+    private function processNext()
+    {
         $next = $this->checkNext();
-        if ($next !== null) {
-            $next->setInput($this->output());
-            $next->run();
-            $result = $next->result();
-            if ($result instanceof OperationContract) {
-                return;
-            }
-            $this->setOutput($next->output());
-            $this->setResult($result);
+        
+        if (is_null($next)) {
+            return $this;
         }
+
+        $next->setInput($this->output());
+        $next->run();
+
+        $result = $next->result();
+        if ($this->hasBeenSchedule($result)) {
+            return $this;
+        }
+
+        $this->setOutput($next->output());
+        $this->setResult($result);
+    }
+
+    protected function hasBeenSchedule($result)
+    {
+        return $this->isAnOperation($result);
+    }
+
+    private function isAnOperation($result)
+    {
+        return $result instanceof OperationContract;
     }
 
     private function runCallback()
     {
-        if ($this->callbackFunction !== null) {
-            if (! is_callable($this->callbackFunction)) {
-                throw new \Exception("Not a valid callback", 1);
-            }
+        if ($this->validCallbackFunction()) {
             $func = $this->callbackFunction;
             $this->setOutput($func($this->output()));
+        }        
+    }
+
+    private function validCallbackFunction() {
+        if (is_null($this->callbackFunction)) {
+            return false;
         }
+        if (!is_callable($this->callbackFunction)) {
+            throw new \Exception("Not a valid callback", 1);
+        }
+        return true;
     }
 
     public function callback(callable $callback)
@@ -62,14 +99,17 @@ abstract class Operation implements OperationContract
 
     protected function checkNext()
     {
-        if ($this->workflow !== null) {
-            foreach ($this->workflow as $posiblePath) {
-                if ($this->result() === $posiblePath->compare) {
-                    return $posiblePath->operation;
-                }
-            }
+        if (is_null($this->workflow)) {
+            return $this->nextOperation;    
         }
-        return $this->nextOperation;
+        return $this->getNextStep();
+        
+    }
+
+    private function getNextStep() {
+        return array_first($this->workflow , function($key, $posiblePath){
+            return $this->result() === $posiblePath->compare;
+        });
     }
 
     public function then(OperationContract $next)
@@ -95,29 +135,29 @@ abstract class Operation implements OperationContract
 
     protected function pushPosiblePath($posiblePath)
     {
-        foreach ($this->workflow as $path) {
-            if ($path->compare === $posiblePath->compare) {
-                throw new OperationWorkflowPathInvalid(
-                    "The value {$posiblePath->compare} it is already assign",
-                    1
-                );
-            }
+        $elment = array_first($this->workflow, function ($key, $path) use ($posiblePath) {
+            return $path->compare === $posiblePath->compare;
+        });
+        if (!is_null($element)) {
+            $message = "The value {$posiblePath->compare} it is already assign";
+            throw new OperationWorkflowPathInvalid($message, 1);
         }
         array_push($this->workflow, $posiblePath);
     }
 
-    public function schedule($delay = 0)
+    public function schedule(TimeLength $length = null)
     {
+        $length = $length ? : TimeLength::fromSeconds(0);
         $job = (new ProcessScheduledOperation($this))
                 ->onQueue($this->getQueue())
-                ->delay($delay);
+                ->delay($length->inSeconds());
         $this->dispatch($job);
         return $this;
     }
 
-    public function release($delay)
+    public function release(TimeLength $length = null)
     {
-        return $this->schedule($delay);
+        return $this->schedule($length ? : TimeLength::fromSeconds(0));
     }
 
     /**
@@ -152,6 +192,16 @@ abstract class Operation implements OperationContract
     public function input()
     {
         return $this->input;
+    }
+
+    /**
+     * Gets the value of input.
+     *
+     * @return mixed
+     */
+    public function processInput()
+    {
+        return $this->input();
     }
 
     /**
@@ -236,6 +286,30 @@ abstract class Operation implements OperationContract
     public function setQueue($queue)
     {
         $this->queue = $queue;
+
+        return $this;
+    }
+
+    /**
+     * Gets the value of processOutput.
+     *
+     * @return mixed
+     */
+    public function processOutput()
+    {
+        return $this->processOutput;
+    }
+
+    /**
+     * Sets the value of processOutput.
+     *
+     * @param mixed $processOutput the process output
+     *
+     * @return self
+     */
+    protected function setProcessOutput()
+    {
+        $this->processOutput = $this->output;
 
         return $this;
     }

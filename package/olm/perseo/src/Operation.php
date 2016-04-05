@@ -22,19 +22,31 @@ class Operation
 
     public function make($operationName)
     {
-        if (!class_exists($operationName)) {
-            throw new OperationNotFound("Class {$operationName} not exists", 1);
-        }
+        $this->validateOperaitonName($operationName);
+        
         $operation = App::make($operationName);
-        if (! $operation instanceof OperationContract) {
-            throw new OperationNotImplementsContract("Class {$operationName} not implements the Interface", 1);
-        }
+        $this->validateOperation($operation, $operationName);
         $this->setUpOperation($operation);
 
         return $operation;
     }
 
-    protected function setUpOperation(OperationContract $operation) {
+    protected function setUpOperation(OperationContract $operation)
+    {
         $operation->setId($this->idGenerator->get());
+    }
+    
+    private function validateOperaitonName($operationName)
+    {
+        if (!class_exists($operationName)) {
+            throw new OperationNotFound("Class {$operationName} not exists", 1);
+        }
+    }
+    private function validateOperation($operation, $operationName)
+    {
+        if (! $operation instanceof OperationContract) {
+            $message = "Class {$operationName} not implements the Interface";
+            throw new OperationNotImplementsContract($message, 1);
+        }
     }
 }
