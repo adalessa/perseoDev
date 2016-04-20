@@ -12,8 +12,5 @@ var elixir = require('laravel-elixir');
  */
 
 elixir(function(mix) {
-    mix.phpUnit([
-    	'package/olm/perseo/**/*.php',
-    	'tests/**/*.php'
-    	]);
+    mix.phpUnit();
 });

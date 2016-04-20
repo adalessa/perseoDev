@@ -1,10 +1,9 @@
 <?php 
 namespace Olm\PerseoTest;
 
-use Olm\Perseo\Contracts\Operation as OperationContract;
-use Olm\Perseo\Implementation\Operation as OperationImplementation;
+use Olm\Perseo\Implementation\Operation as Operation;
 
-class TestOperationAdd extends OperationImplementation implements OperationContract
+class TestOperationAdd extends Operation 
 {
     public function process()
     {
