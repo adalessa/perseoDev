@@ -28,14 +28,14 @@ class OperationTest extends TestCase
     public function throw_exception_if_not_class_not_exit()
     {
         $this->setExpectedException(OperationNotFound::class);
-        $operation = Operation::make('NotValidClass');
+        Operation::make('NotValidClass');
     }
 
     /** @test */
     public function trhow_exception_if_the_class_not_implement_the_contract()
     {
         $this->setExpectedException(OperationNotImplementsContract::class);
-        $operation = Operation::make(TestOperationNotImplements::class);
+        Operation::make(TestOperationNotImplements::class);
     }
 
     /** @test */
@@ -105,8 +105,8 @@ class OperationTest extends TestCase
         $operation2 = Operation::make(TestOperationSecond::class);
         $operation3 = Operation::make(TestOperationThird::class);
 
-        $operation1->thenIf(function($data) {return false;}, $operation2)
-                   ->thenIf(function($data) {return true;}, $operation3);
+        $operation1->thenIf(function() {return false;}, $operation2)
+                   ->thenIf(function() {return true;}, $operation3);
         $operation1->run();
         
         $this->assertArraySubset(["operation" => "operation3"], $operation1->output());

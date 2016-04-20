@@ -5,9 +5,8 @@ use Olm\Perseo\TimeLength;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Olm\Perseo\Jobs\ProcessScheduledOperation;
 use Olm\Perseo\Exceptions\OperationWorkflowPathInvalid;
-use Olm\Perseo\Contracts\Operation as OperationContract;
 
-abstract class Operation implements OperationContract
+abstract class Operation
 {
     use DispatchesJobs;
 
@@ -21,6 +20,8 @@ abstract class Operation implements OperationContract
     protected $workflow = null;
     protected $callbackFunction = null;
 
+    
+    abstract public function process();
     /**
      *
      * This is the funciton that will manage the excecution of the operation
@@ -69,7 +70,7 @@ abstract class Operation implements OperationContract
 
     private function isAnOperation($result)
     {
-        return $result instanceof OperationContract;
+        return $result instanceof Operation;
     }
 
     private function runCallback()
@@ -106,23 +107,23 @@ abstract class Operation implements OperationContract
     }
 
     private function getNextStep() {
-        return array_first($this->workflow , function($key, $posiblePath){
+        return array_first($this->workflow , function($posiblePath){
             return $this->result() === $posiblePath->compare;
         });
     }
 
-    public function then(OperationContract $next)
+    public function then(Operation $next)
     {
         $this->nextOperation = $next;
         return $this;
     }
 
-    public function otherwise(OperationContract $next)
+    public function otherwise(Operation $next)
     {
         return $this->then($next);
     }
 
-    public function thenIf($compare, OperationContract $next)
+    public function thenIf($compare, Operation $next)
     {
         $this->workflow = $this->workflow ? : [];
         $posiblePath = new \stdClass;
@@ -134,7 +135,7 @@ abstract class Operation implements OperationContract
 
     protected function pushPosiblePath($posiblePath)
     {
-        $elment = array_first($this->workflow, function ($key, $path) use ($posiblePath) {
+        $element = array_first($this->workflow, function ($path) use ($posiblePath) {
             return $path->compare === $posiblePath->compare;
         });
         if (!is_null($element)) {
@@ -146,7 +147,10 @@ abstract class Operation implements OperationContract
 
     public function schedule(TimeLength $length = null)
     {
-        $length = $length ? : TimeLength::fromSeconds(0);
+        if (is_null($length)) {
+            $length = TimeLength::fromSeconds(0);
+        }
+        
         $job = (new ProcessScheduledOperation($this))
                 ->onQueue($this->getQueue())
                 ->delay($length->inSeconds());

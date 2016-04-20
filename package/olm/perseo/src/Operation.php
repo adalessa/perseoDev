@@ -2,11 +2,10 @@
 namespace Olm\Perseo;
 
 use App;
-use Config;
 use Olm\Perseo\Exceptions\OperationNotFound;
-use Olm\Perseo\Contracts\Operation as OperationContract;
 use Olm\Perseo\Exceptions\OperationNotImplementsContract;
 use Olm\Perseo\Contracts\IdGenerator as IdGeneratorContract;
+use Olm\Perseo\Implementation\Operation as OperationImplementation;
 
 class Operation
 {
@@ -30,7 +29,7 @@ class Operation
         return $operation;
     }
 
-    protected function setUpOperation(OperationContract $operation)
+    protected function setUpOperation(OperationImplementation $operation)
     {
         $operation->setId($this->idGenerator->get());
     }
@@ -43,7 +42,7 @@ class Operation
     }
     private function validateOperation($operation, $operationName)
     {
-        if (! $operation instanceof OperationContract) {
+        if (! $operation instanceof OperationImplementation) {
             $message = "Class {$operationName} not implements the Interface";
             throw new OperationNotImplementsContract($message, 1);
         }

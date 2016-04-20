@@ -2,10 +2,9 @@
 namespace Olm\PerseoTest;
 
 use Olm\Perseo\Traits\ComplexCompareInThenIf;
-use Olm\Perseo\Contracts\Operation as OperationContract;
-use Olm\Perseo\Implementation\Operation as OperationImplementation;
+use Olm\Perseo\Implementation\Operation;
 
-class TestOperationFirst extends OperationImplementation implements OperationContract
+class TestOperationFirst extends Operation
 {
     use ComplexCompareInThenIf;
 

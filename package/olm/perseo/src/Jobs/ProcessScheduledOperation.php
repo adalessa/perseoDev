@@ -3,7 +3,7 @@
 namespace Olm\Perseo\Jobs;
 
 use Olm\Perseo\Jobs\Job;
-use Olm\Perseo\Contracts\Operation;
+use Olm\Perseo\Implementation\Operation;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Bus\SelfHandling;
