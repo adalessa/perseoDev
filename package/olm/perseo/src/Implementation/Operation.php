@@ -60,7 +60,6 @@ abstract class Operation implements OperationContract
         }
 
         $this->setOutput($next->output());
-        $this->setResult($result);
     }
 
     protected function hasBeenSchedule($result)

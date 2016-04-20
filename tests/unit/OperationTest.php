@@ -1,5 +1,6 @@
 <?php
 
+use Olm\Perseo\TimeLength;
 use Olm\PerseoTest\TestOperation;
 use Olm\PerseoTest\TestOperationAdd;
 use Olm\PerseoTest\TestOperationOne;
@@ -61,7 +62,7 @@ class OperationTest extends TestCase
     {
         $this->expectsJobs(ProcessScheduledOperation::class);
         $operation = Operation::make(TestOperation::class);
-        $operation->schedule();
+        $operation->schedule(TimeLength::fromMinutes(1));
     }
 
     /** @test */
@@ -197,13 +198,23 @@ class OperationTest extends TestCase
         );
         
         $this->assertEquals(
+            ["name" => "testOne"],
+            $operation2->processInput()
+        );
+
+        $this->assertEquals(
             ["name" => "testOne", "lastname" => "testTwo"],
             $operation2->processOutput()
         );
 
         $this->assertEquals(
             ["name" => "testOne", "lastname" => "testTwo","operation" => "operation3"],
-            $operation3->output()
+            $operation3->processOutput()
+        );
+
+        $this->assertEquals(
+            ["name" => "testOne", "lastname" => "testTwo","operation" => "operation3"],
+            $operation1->output()
         );
     }
 }

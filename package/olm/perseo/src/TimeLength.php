@@ -16,7 +16,7 @@ class TimeLength {
 		return new static($seconds);
 	}
 
-	public static function fromMinuts($minute)
+	public static function fromMinutes($minute)
 	{
 		return new static($minute * 60);
 	}

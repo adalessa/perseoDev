@@ -27,7 +27,6 @@ class Operation
         $operation = App::make($operationName);
         $this->validateOperation($operation, $operationName);
         $this->setUpOperation($operation);
-
         return $operation;
     }
 
