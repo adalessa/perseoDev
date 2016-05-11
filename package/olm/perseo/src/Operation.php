@@ -43,7 +43,7 @@ class Operation
     private function validateOperation($operation, $operationName)
     {
         if (! $operation instanceof OperationImplementation) {
-            $message = "Class {$operationName} not implements the Interface";
+            $message = "Class {$operationName} it does noy extends ". OperationImplementation::class;
             throw new OperationNotImplementsContract($message, 1);
         }
     }
